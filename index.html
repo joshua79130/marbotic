@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Marbotic ✦ Lettres Magiques</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --wood: #c8845a;
+    --wood-dark: #9b5e38;
+    --wood-light: #e8b48a;
+    --cream: #fdf6ec;
+    --sage: #7aab7a;
+    --sage-light: #a8d4a8;
+    --sky: #7ab8d4;
+    --sun: #f5c842;
+    --sun-dark: #d4a020;
+    --coral: #e8826a;
+    --text: #3d2b1f;
+    --text-light: #7a5a44;
+    --shadow: rgba(61,43,31,0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--cream);
+    font-family: 'Nunito', sans-serif;
+    color: var(--text);
+    overflow: hidden;
+    touch-action: none;
+  }
+
+  /* ── SCREENS ── */
+  .screen {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    transition: opacity 0.4s, transform 0.4s;
+    padding: 20px;
+  }
+  .screen.hidden { opacity: 0; pointer-events: none; transform: scale(0.97); }
+
+  /* ── BACKGROUND TEXTURE ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      radial-gradient(circle at 15% 85%, rgba(200,132,90,0.08) 0%, transparent 50%),
+      radial-gradient(circle at 85% 15%, rgba(122,171,122,0.08) 0%, transparent 50%),
+      radial-gradient(circle at 50% 50%, rgba(245,200,66,0.04) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  .app-header {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 64px;
+    background: var(--wood);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px;
+    z-index: 100;
+    box-shadow: 0 3px 12px var(--shadow);
+  }
+  .app-header h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.6rem; color: var(--cream);
+    letter-spacing: 1px;
+  }
+  .header-btns { display: flex; gap: 10px; }
+  .btn-icon {
+    width: 40px; height: 40px;
+    border: none; border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    color: white; font-size: 1.2rem;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .btn-icon:active { transform: scale(0.9); background: rgba(255,255,255,0.35); }
+
+  /* ── MAIN CONTENT AREA ── */
+  .content { position: fixed; top: 64px; bottom: 0; left: 0; right: 0; overflow: hidden; }
+
+  /* ══════════════════════════════
+     SCREEN: MODEL SELECTION
+  ══════════════════════════════ */
+  #screen-model {
+    background: var(--cream);
+    gap: 20px; z-index: 10;
+  }
+  #screen-model h2 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.8rem; color: var(--wood-dark);
+    text-align: center;
+  }
+  #screen-model p { color: var(--text-light); text-align: center; font-size: 0.95rem; line-height: 1.5; max-width: 340px; }
+  .model-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; max-width: 400px; }
+  .model-card {
+    border: 3px solid var(--wood-light);
+    border-radius: 18px;
+    padding: 18px 14px;
+    background: white;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+  .model-card:active { transform: scale(0.97); }
+  .model-card.selected { border-color: var(--wood); background: #fff8f0; box-shadow: 0 4px 16px rgba(200,132,90,0.3); }
+  .model-card .model-icon { font-size: 2rem; margin-bottom: 6px; }
+  .model-card .model-name { font-weight: 800; font-size: 0.85rem; color: var(--text); }
+  .model-card .model-ppi { font-size: 0.75rem; color: var(--text-light); margin-top: 2px; }
+  .btn-primary {
+    background: var(--wood);
+    color: white;
+    border: none; border-radius: 50px;
+    padding: 14px 40px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 1.1rem; font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(200,132,90,0.4);
+    transition: background 0.2s, transform 0.15s;
+    margin-top: 10px;
+  }
+  .btn-primary:active { transform: scale(0.97); background: var(--wood-dark); }
+  .btn-primary:disabled { opacity: 0.4; cursor: default; }
+
+  /* ══════════════════════════════
+     SCREEN: CALIBRATION
+  ══════════════════════════════ */
+  #screen-calib {
+    background: var(--cream);
+    gap: 16px; z-index: 10;
+    padding-top: 80px;
+  }
+  .calib-header { text-align: center; }
+  .calib-header h2 { font-family: 'Fredoka One', cursive; font-size: 1.6rem; color: var(--wood-dark); }
+  .calib-header p { color: var(--text-light); font-size: 0.9rem; margin-top: 4px; }
+
+  .calib-piece-display {
+    width: 140px; height: 140px;
+    background: white;
+    border-radius: 24px;
+    border: 3px dashed var(--wood-light);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+    gap: 6px;
+    box-shadow: 0 4px 20px var(--shadow);
+    transition: border-color 0.3s, background 0.3s;
+  }
+  .calib-piece-display.detected {
+    border-color: var(--sage);
+    border-style: solid;
+    background: #f0faf0;
+  }
+  .calib-piece-letter {
+    font-family: 'Fredoka One', cursive;
+    font-size: 5rem; color: var(--wood);
+    line-height: 1;
+    transition: transform 0.3s;
+  }
+  .calib-piece-display.detected .calib-piece-letter { transform: scale(1.05); color: var(--wood-dark); }
+  .calib-status { font-size: 0.85rem; color: var(--text-light); text-align: center; }
+
+  .calib-progress-bar {
+    width: 100%; max-width: 340px;
+    height: 10px; background: #e8ddd5;
+    border-radius: 10px; overflow: hidden;
+  }
+  .calib-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--wood-light), var(--wood));
+    border-radius: 10px;
+    transition: width 0.4s ease;
+  }
+  .calib-progress-label { font-size: 0.8rem; color: var(--text-light); }
+
+  .calib-pieces-grid {
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: 7px; max-width: 380px;
+    overflow-y: auto; max-height: 130px;
+  }
+  .calib-chip {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    border: 2px solid var(--wood-light);
+    background: white;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1rem; color: var(--text-light);
+    transition: all 0.25s;
+  }
+  .calib-chip.done { background: var(--sage); border-color: var(--sage); color: white; }
+  .calib-chip.active { background: var(--sun); border-color: var(--sun-dark); color: var(--text); transform: scale(1.15); }
+
+  .calib-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .btn-secondary {
+    background: white; color: var(--wood-dark);
+    border: 2px solid var(--wood-light); border-radius: 50px;
+    padding: 10px 24px; font-family: 'Nunito', sans-serif;
+    font-size: 0.95rem; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-secondary:active { background: #fff0e8; }
+
+  /* ══════════════════════════════
+     SCREEN: DETECTION (MAIN)
+  ══════════════════════════════ */
+  #screen-detect {
+    background: var(--cream);
+    z-index: 5;
+    padding-top: 64px;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+  }
+
+  .detect-arena {
+    flex: 1;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 20px;
+    gap: 20px;
+    position: relative;
+  }
+
+  /* The big letter display */
+  .letter-stage {
+    width: 220px; height: 220px;
+    background: white;
+    border-radius: 32px;
+    box-shadow: 0 8px 32px var(--shadow);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+    overflow: hidden;
+    transition: box-shadow 0.3s;
+  }
+  .letter-stage::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), transparent 60%);
+    pointer-events: none;
+  }
+  .letter-stage.show-letter { box-shadow: 0 12px 48px rgba(200,132,90,0.35); }
+
+  .big-letter {
+    font-family: 'Fredoka One', cursive;
+    font-size: 9rem; line-height: 1;
+    color: var(--wood);
+    opacity: 0; transform: scale(0.5);
+    transition: opacity 0.35s cubic-bezier(0.34,1.56,0.64,1), transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    position: relative; z-index: 1;
+  }
+  .big-letter.visible { opacity: 1; transform: scale(1); }
+
+  .waiting-hint {
+    font-size: 0.9rem; color: var(--text-light);
+    text-align: center; line-height: 1.4;
+    transition: opacity 0.3s;
+  }
+  .letter-stage.show-letter .waiting-hint { opacity: 0; position: absolute; }
+
+  .letter-name-label {
+    font-size: 1rem; font-weight: 700; color: var(--text-light);
+    opacity: 0; transition: opacity 0.3s;
+    position: absolute; bottom: 16px;
+    font-family: 'Fredoka One', cursive;
+    letter-spacing: 1px;
+  }
+  .letter-stage.show-letter .letter-name-label { opacity: 1; }
+
+  /* Touch indicator dots */
+  .touch-dots {
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 200;
+  }
+  .touch-dot {
+    position: absolute;
+    width: 20px; height: 20px;
+    background: var(--wood-light);
+    border: 3px solid var(--wood);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0.7;
+    animation: dotPulse 0.5s ease-out forwards;
+  }
+  @keyframes dotPulse {
+    0% { transform: translate(-50%,-50%) scale(1.5); opacity: 0; }
+    30% { opacity: 0.8; }
+    100% { transform: translate(-50%,-50%) scale(1); opacity: 0.5; }
+  }
+
+  /* Debug info */
+  .detect-debug {
+    background: white; border-radius: 16px;
+    padding: 12px 16px;
+    font-size: 0.78rem; color: var(--text-light);
+    font-family: 'Courier New', monospace;
+    max-width: 340px; width: 100%;
+    box-shadow: 0 2px 8px var(--shadow);
+    display: none;
+  }
+  .detect-debug.visible { display: block; }
+  .debug-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
+
+  /* Bottom bar */
+  .detect-bottom {
+    padding: 12px 20px 20px;
+    display: flex; gap: 10px; justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .mode-pill {
+    background: white;
+    border: 2px solid var(--wood-light);
+    border-radius: 50px;
+    padding: 8px 20px;
+    font-weight: 700; font-size: 0.85rem;
+    color: var(--text-light); cursor: pointer;
+    transition: all 0.2s;
+  }
+  .mode-pill.active { background: var(--wood); border-color: var(--wood); color: white; }
+
+  /* ── UNKNOWN PIECE ── */
+  .unknown-badge {
+    background: var(--coral);
+    color: white; border-radius: 12px;
+    padding: 8px 16px; font-size: 0.85rem; font-weight: 700;
+    margin-top: 8px; opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .unknown-badge.visible { opacity: 1; }
+
+  /* ── CONFETTI ── */
+  .confetti-container { position: fixed; inset: 0; pointer-events: none; z-index: 300; overflow: hidden; }
+  .confetti-piece {
+    position: absolute;
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    animation: confettiFall linear forwards;
+  }
+  @keyframes confettiFall {
+    0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* ── TOOLTIP/OVERLAY ── */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(61,43,31,0.5);
+    z-index: 500;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .overlay.visible { opacity: 1; pointer-events: all; }
+  .overlay-card {
+    background: white; border-radius: 24px;
+    padding: 28px 24px;
+    max-width: 360px; width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    transform: scale(0.9); transition: transform 0.3s;
+    text-align: center;
+  }
+  .overlay.visible .overlay-card { transform: scale(1); }
+  .overlay-card h3 { font-family: 'Fredoka One', cursive; font-size: 1.5rem; color: var(--wood-dark); margin-bottom: 10px; }
+  .overlay-card p { color: var(--text-light); font-size: 0.9rem; line-height: 1.6; margin-bottom: 16px; }
+
+  /* ── ANNOUNCE ── */
+  .announce {
+    position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-20px);
+    background: var(--sage); color: white;
+    border-radius: 50px; padding: 8px 24px;
+    font-weight: 800; font-size: 1rem;
+    box-shadow: 0 4px 16px rgba(122,171,122,0.4);
+    z-index: 400;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s, transform 0.3s;
+    white-space: nowrap;
+  }
+  .announce.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Responsive for small iPads */
+  @media (max-height: 700px) {
+    .letter-stage { width: 170px; height: 170px; }
+    .big-letter { font-size: 7rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="app-header">
+  <h1>✦ Marbotic</h1>
+  <div class="header-btns">
+    <button class="btn-icon" id="btn-debug" title="Debug" style="display:none">🔍</button>
+    <button class="btn-icon" id="btn-recalib" title="Recalibrer">⚙️</button>
+    <button class="btn-icon" id="btn-help" title="Aide">❓</button>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- ══ SCREEN: CHOIX MODÈLE IPAD ══ -->
+  <div class="screen" id="screen-model">
+    <h2>Quel iPad utilises-tu ?</h2>
+    <p>Le modèle détermine la précision de détection des lettres.</p>
+    <div class="model-grid">
+      <div class="model-card" data-ppi="163.0" data-model="iPad Mini (1-4)">
+        <div class="model-icon">📱</div>
+        <div class="model-name">iPad Mini</div>
+        <div class="model-ppi">163 ppi</div>
+      </div>
+      <div class="model-card" data-ppi="132.0" data-model="iPad Air / standard 9.7&quot;">
+        <div class="model-icon">🖥️</div>
+        <div class="model-name">iPad Air 9.7"</div>
+        <div class="model-ppi">132 ppi</div>
+      </div>
+      <div class="model-card" data-ppi="264.0" data-model="iPad Air Retina / Pro 9.7&quot;">
+        <div class="model-icon">✨</div>
+        <div class="model-name">iPad Retina 9.7"</div>
+        <div class="model-ppi">264 ppi</div>
+      </div>
+      <div class="model-card" data-ppi="120.0" data-model="iPad 10.2&quot; / 10.5&quot;">
+        <div class="model-icon">📐</div>
+        <div class="model-name">iPad 10.2"</div>
+        <div class="model-ppi">264 ppi</div>
+      </div>
+    </div>
+    <button class="btn-primary" id="btn-model-ok" disabled>Continuer →</button>
+  </div>
+
+  <!-- ══ SCREEN: CALIBRATION ══ -->
+  <div class="screen hidden" id="screen-calib">
+    <div class="calib-header">
+      <h2>Calibration</h2>
+      <p>Pose chaque lettre/chiffre sur l'écran tour à tour</p>
+    </div>
+
+    <div class="calib-piece-display" id="calib-display">
+      <div class="calib-piece-letter" id="calib-target-letter">?</div>
+      <div class="calib-status" id="calib-status">Pose la pièce ici…</div>
+    </div>
+
+    <div class="calib-progress-bar">
+      <div class="calib-progress-fill" id="calib-fill" style="width:0%"></div>
+    </div>
+    <div class="calib-progress-label" id="calib-label">0 / 36 calibrés</div>
+
+    <div class="calib-pieces-grid" id="calib-grid"></div>
+
+    <div class="calib-btns">
+      <button class="btn-secondary" id="btn-skip-piece">Passer →</button>
+      <button class="btn-primary" id="btn-calib-done">Jouer ! 🎉</button>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN: DÉTECTION PRINCIPALE ══ -->
+  <div class="screen hidden" id="screen-detect">
+    <div class="detect-arena">
+      <div class="letter-stage" id="letter-stage">
+        <span class="big-letter" id="big-letter"></span>
+        <div class="waiting-hint">✋ Pose une lettre<br>ou un chiffre ici !</div>
+        <div class="letter-name-label" id="letter-name"></div>
+      </div>
+
+      <div class="unknown-badge" id="unknown-badge">Pièce inconnue – recalibrer ?</div>
+
+      <div class="detect-debug" id="detect-debug">
+        <div class="debug-row"><span>base (mm)</span><span id="dbg-base">—</span></div>
+        <div class="debug-row"><span>θ (°)</span><span id="dbg-theta">—</span></div>
+        <div class="debug-row"><span>ρ (mm)</span><span id="dbg-rho">—</span></div>
+        <div class="debug-row"><span>id calculé</span><span id="dbg-id">—</span></div>
+        <div class="debug-row"><span>correspondance</span><span id="dbg-match">—</span></div>
+      </div>
+    </div>
+
+    <div class="detect-bottom">
+      <button class="mode-pill active" id="pill-detect" data-mode="detect">Détecter</button>
+      <button class="mode-pill" id="pill-alphabet" data-mode="alphabet">Alphabet</button>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<!-- Touch dots layer -->
+<div class="touch-dots" id="touch-dots"></div>
+
+<!-- Confetti layer -->
+<div class="confetti-container" id="confetti"></div>
+
+<!-- Announce toast -->
+<div class="announce" id="announce"></div>
+
+<!-- Overlay: Help -->
+<div class="overlay" id="overlay-help">
+  <div class="overlay-card">
+    <h3>Comment jouer ?</h3>
+    <p>
+      1. Pose une <strong>lettre ou un chiffre</strong> en bois à plat sur l'écran.<br><br>
+      2. L'écran la reconnaît grâce aux <strong>3 petits picots</strong> sous chaque pièce.<br><br>
+      3. Si une pièce n'est pas reconnue, va dans <strong>⚙️ Calibration</strong> pour l'ajouter.
+    </p>
+    <button class="btn-primary" onclick="closeOverlay('overlay-help')">OK !</button>
+  </div>
+</div>
+
+<!-- Overlay: Recalibration confirm -->
+<div class="overlay" id="overlay-recalib">
+  <div class="overlay-card">
+    <h3>Recalibrer ?</h3>
+    <p>Tu vas refaire la calibration. Les données actuelles seront gardées — tu pourras juste en rajouter ou corriger.</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <button class="btn-secondary" onclick="closeOverlay('overlay-recalib')">Annuler</button>
+      <button class="btn-primary" onclick="startCalib()">Oui, recalibrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  MARBOTIC SMART KIT — Pure JS detector
+//  Technique: 3-point capacitive pattern detection
+//  chaque pièce = 2 points "base" + 1 point "satellite"
+//  On calcule: distance base (mm), angle θ (°), distance ρ (mm)
+//  Un hash arrondi sert d'identifiant unique
+// ═══════════════════════════════════════════════════════
+
+// ── iPad DPI / pixels per mm ──
+let PX_PER_MM = 163 / 25.4; // défaut iPad mini
+
+// Toutes les pièces à calibrer
+const ALL_PIECES = [
+  'A','B','C','D','E','F','G','H','I','J','K','L','M',
+  'N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
+  '0','1','2','3','4','5','6','7','8','9'
+];
+
+// Storage: map id_hash → label
+let calibData = {};
+try { calibData = JSON.parse(localStorage.getItem('marboticCalib') || '{}'); } catch(e) {}
+
+let calibQueue = [];
+let calibIndex = 0;
+let currentCalibPiece = null;
+let lastDetectedPattern = null;
+let debugMode = false;
+
+// ── Screen management ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+
+// ── INIT ──
+window.addEventListener('load', () => {
+  // Model selection
+  document.querySelectorAll('.model-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.model-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      PX_PER_MM = parseFloat(card.dataset.ppi) / 25.4;
+      localStorage.setItem('marboticModel', card.dataset.ppi);
+      document.getElementById('btn-model-ok').disabled = false;
+    });
+  });
+
+  // Restore model
+  const savedPpi = localStorage.getItem('marboticModel');
+  if (savedPpi) {
+    const card = document.querySelector(`.model-card[data-ppi="${savedPpi}"]`);
+    if (card) { card.click(); }
+  }
+
+  document.getElementById('btn-model-ok').addEventListener('click', () => {
+    const hasCalib = Object.keys(calibData).length > 0;
+    if (hasCalib) {
+      showScreen('screen-detect');
+      setupDetect();
+    } else {
+      startCalib();
+    }
+  });
+
+  // Check if we have saved model + calib → skip model screen
+  if (savedPpi && Object.keys(calibData).length > 0) {
+    PX_PER_MM = parseFloat(savedPpi) / 25.4;
+    showScreen('screen-detect');
+    setupDetect();
+    showAnnounce(`${Object.keys(calibData).length} pièces chargées ✓`);
+  }
+
+  // Header buttons
+  document.getElementById('btn-recalib').addEventListener('click', () => openOverlay('overlay-recalib'));
+  document.getElementById('btn-help').addEventListener('click', () => openOverlay('overlay-help'));
+  document.getElementById('btn-debug').addEventListener('click', toggleDebug);
+
+  // Calib buttons
+  document.getElementById('btn-skip-piece').addEventListener('click', skipCalibPiece);
+  document.getElementById('btn-calib-done').addEventListener('click', () => {
+    saveCalib();
+    showScreen('screen-detect');
+    setupDetect();
+    showAnnounce(`${Object.keys(calibData).length} pièces calibrées ! 🎉`);
+  });
+
+  // Mode pills
+  document.querySelectorAll('.mode-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      document.querySelectorAll('.mode-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════
+//  GEOMETRY ENGINE
+// ═══════════════════════════════════════════════════════
+
+function dist(a, b) {
+  return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+}
+
+function midpoint(a, b) {
+  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+}
+
+function computePattern(touches) {
+  // touches: array of {x, y}
+  // Find the two closest points → "base"
+  const pairs = [
+    { a: 0, b: 1, c: 2 },
+    { a: 0, b: 2, c: 1 },
+    { a: 1, b: 2, c: 0 }
+  ];
+  let minDist = Infinity, baseA, baseB, satC;
+  for (const p of pairs) {
+    const d = dist(touches[p.a], touches[p.b]);
+    if (d < minDist) { minDist = d; baseA = p.a; baseB = p.b; satC = p.c; }
+  }
+
+  const pA = touches[baseA], pB = touches[baseB], pC = touches[satC];
+  const basePx = dist(pA, pB);
+  const baseMM = basePx / PX_PER_MM;
+
+  const mid = midpoint(pA, pB);
+  const satDx = pC.x - mid.x;
+  const satDy = pC.y - mid.y;
+  const rhoMM = Math.sqrt(satDx ** 2 + satDy ** 2) / PX_PER_MM;
+  let theta = Math.atan2(satDy, satDx) * 180 / Math.PI;
+
+  // Normalize theta so the base orientation doesn't matter
+  // The base direction angle
+  const baseDx = pB.x - pA.x;
+  const baseDy = pB.y - pA.y;
+  const baseAngle = Math.atan2(baseDy, baseDx) * 180 / Math.PI;
+  let relTheta = theta - baseAngle;
+  // Normalize to [0, 360)
+  relTheta = ((relTheta % 360) + 360) % 360;
+  // Map to [-180, 180]
+  if (relTheta > 180) relTheta -= 360;
+  // We can also have the base flipped — normalize to upper half
+  if (relTheta < 0) relTheta = -relTheta;
+
+  return { baseMM, rhoMM, theta: relTheta };
+}
+
+function patternHash(pattern) {
+  // Quantize to tolerance: base ±1mm, rho ±1mm, theta ±15°
+  const b = Math.round(pattern.baseMM);
+  const r = Math.round(pattern.rhoMM);
+  const t = Math.round(pattern.theta / 15) * 15;
+  return `${b}_${r}_${t}`;
+}
+
+function matchPattern(pattern) {
+  const hash = patternHash(pattern);
+  if (calibData[hash]) return calibData[hash];
+
+  // Fuzzy match: try ±1 step in each dimension
+  const bs = [Math.round(pattern.baseMM) - 1, Math.round(pattern.baseMM), Math.round(pattern.baseMM) + 1];
+  const rs = [Math.round(pattern.rhoMM) - 1, Math.round(pattern.rhoMM), Math.round(pattern.rhoMM) + 1];
+  const ts = [
+    Math.round(pattern.theta / 15) * 15 - 15,
+    Math.round(pattern.theta / 15) * 15,
+    Math.round(pattern.theta / 15) * 15 + 15
+  ];
+  for (const b of bs) for (const r of rs) for (const t of ts) {
+    const k = `${b}_${r}_${t}`;
+    if (calibData[k]) return calibData[k];
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════
+//  CALIBRATION FLOW
+// ═══════════════════════════════════════════════════════
+
+function startCalib() {
+  closeOverlay('overlay-recalib');
+  showScreen('screen-calib');
+  document.getElementById('btn-debug').style.display = 'flex';
+
+  // Build queue from pieces not yet calibrated
+  calibQueue = ALL_PIECES.filter(p => {
+    const alreadyHas = Object.values(calibData).includes(p);
+    return !alreadyHas;
+  });
+  if (calibQueue.length === 0) calibQueue = [...ALL_PIECES]; // redo all
+
+  calibIndex = 0;
+  buildCalibGrid();
+  showCalibPiece();
+  bindCalibTouch();
+}
+
+function buildCalibGrid() {
+  const grid = document.getElementById('calib-grid');
+  grid.innerHTML = '';
+  ALL_PIECES.forEach(p => {
+    const chip = document.createElement('div');
+    chip.className = 'calib-chip';
+    chip.id = `chip-${p}`;
+    chip.textContent = p;
+    const alreadyDone = Object.values(calibData).includes(p);
+    if (alreadyDone) chip.classList.add('done');
+    grid.appendChild(chip);
+  });
+}
+
+function showCalibPiece() {
+  if (calibIndex >= calibQueue.length) {
+    document.getElementById('btn-calib-done').textContent = 'Terminé ! 🎉';
+    document.getElementById('calib-status').textContent = 'Toutes les pièces calibrées !';
+    return;
+  }
+  const piece = calibQueue[calibIndex];
+  currentCalibPiece = piece;
+  document.getElementById('calib-target-letter').textContent = piece;
+  document.getElementById('calib-status').textContent = `Pose la pièce "${piece}" sur l'écran`;
+  document.getElementById('calib-display').classList.remove('detected');
+  lastDetectedPattern = null;
+
+  // Highlight active chip
+  document.querySelectorAll('.calib-chip').forEach(c => c.classList.remove('active'));
+  const chip = document.getElementById(`chip-${piece}`);
+  if (chip) { chip.classList.add('active'); chip.scrollIntoView({ block: 'nearest' }); }
+
+  updateCalibProgress();
+}
+
+function updateCalibProgress() {
+  const total = ALL_PIECES.length;
+  const done = Object.values(calibData).filter(v => ALL_PIECES.includes(v)).length;
+  document.getElementById('calib-fill').style.width = `${(done / total) * 100}%`;
+  document.getElementById('calib-label').textContent = `${done} / ${total} calibrés`;
+}
+
+function skipCalibPiece() {
+  calibIndex++;
+  showCalibPiece();
+}
+
+function bindCalibTouch() {
+  const display = document.getElementById('calib-display');
+
+  function onTouch(e) {
+    e.preventDefault();
+    const touches = Array.from(e.touches).map(t => ({ x: t.clientX, y: t.clientY }));
+    showTouchDots(touches);
+
+    if (touches.length < 3) return;
+
+    const pattern = computePattern(touches);
+    lastDetectedPattern = pattern;
+
+    // Update debug
+    document.getElementById('dbg-base').textContent = pattern.baseMM.toFixed(2);
+    document.getElementById('dbg-theta').textContent = pattern.theta.toFixed(1);
+    document.getElementById('dbg-rho').textContent = pattern.rhoMM.toFixed(2);
+    const hash = patternHash(pattern);
+    document.getElementById('dbg-id').textContent = hash;
+    document.getElementById('dbg-match').textContent = matchPattern(pattern) || '—';
+
+    display.classList.add('detected');
+    document.getElementById('calib-status').textContent = `Détecté ! Lève la pièce pour valider.`;
+  }
+
+  function onTouchEnd(e) {
+    e.preventDefault();
+    clearTouchDots();
+    if (lastDetectedPattern && currentCalibPiece) {
+      // Save
+      const hash = patternHash(lastDetectedPattern);
+      calibData[hash] = currentCalibPiece;
+      saveCalib();
+
+      // Mark chip done
+      const chip = document.getElementById(`chip-${currentCalibPiece}`);
+      if (chip) { chip.classList.remove('active'); chip.classList.add('done'); }
+
+      showAnnounce(`"${currentCalibPiece}" enregistrée ✓`);
+      lastDetectedPattern = null;
+      calibIndex++;
+      setTimeout(showCalibPiece, 300);
+    }
+    display.classList.remove('detected');
+  }
+
+  // Remove old listeners and add fresh
+  display.removeEventListener('touchstart', display._touchHandler);
+  display.removeEventListener('touchend', display._touchEndHandler);
+  display._touchHandler = onTouch;
+  display._touchEndHandler = onTouchEnd;
+  display.addEventListener('touchstart', onTouch, { passive: false });
+  display.addEventListener('touchend', onTouchEnd, { passive: false });
+}
+
+function saveCalib() {
+  localStorage.setItem('marboticCalib', JSON.stringify(calibData));
+  updateCalibProgress();
+  buildCalibGrid();
+}
+
+// ═══════════════════════════════════════════════════════
+//  MAIN DETECTION SCREEN
+// ═══════════════════════════════════════════════════════
+
+let detectCooldown = false;
+
+function setupDetect() {
+  document.getElementById('btn-debug').style.display = 'flex';
+  const stage = document.getElementById('letter-stage');
+
+  function onTouch(e) {
+    e.preventDefault();
+    const touches = Array.from(e.touches).map(t => ({ x: t.clientX, y: t.clientY }));
+    showTouchDots(touches);
+
+    if (touches.length < 3) return;
+
+    const pattern = computePattern(touches);
+
+    // Debug update
+    document.getElementById('dbg-base').textContent = pattern.baseMM.toFixed(2);
+    document.getElementById('dbg-theta').textContent = pattern.theta.toFixed(1);
+    document.getElementById('dbg-rho').textContent = pattern.rhoMM.toFixed(2);
+    document.getElementById('dbg-id').textContent = patternHash(pattern);
+    const match = matchPattern(pattern);
+    document.getElementById('dbg-match').textContent = match || '—';
+
+    if (match) {
+      showLetter(match);
+    }
+  }
+
+  function onTouchEnd(e) {
+    e.preventDefault();
+    clearTouchDots();
+    hideLetter();
+  }
+
+  // Full-screen touch
+  document.addEventListener('touchstart', onTouch, { passive: false });
+  document.addEventListener('touchend', onTouchEnd, { passive: false });
+}
+
+let letterTimeout;
+function showLetter(letter) {
+  clearTimeout(letterTimeout);
+  const stage = document.getElementById('letter-stage');
+  const bigLetter = document.getElementById('big-letter');
+  const letterName = document.getElementById('letter-name');
+  const unknownBadge = document.getElementById('unknown-badge');
+
+  stage.classList.add('show-letter');
+  bigLetter.textContent = letter;
+  bigLetter.classList.add('visible');
+  unknownBadge.classList.remove('visible');
+
+  // Letter name
+  const isNum = /\d/.test(letter);
+  const names = {
+    'A':'Alpha','B':'Bêta','C':'Cé','D':'Dé','E':'E','F':'Effe','G':'Gé','H':'Ache',
+    'I':'I','J':'Ji','K':'Ka','L':'Elle','M':'Emme','N':'Enne','O':'O','P':'Pé',
+    'Q':'Ku','R':'Erre','S':'Esse','T':'Té','U':'U','V':'Vé','W':'Doublevé',
+    'X':'Ix','Y':'I grec','Z':'Zède'
+  };
+  letterName.textContent = isNum ? `le ${letter}` : (names[letter] || letter);
+
+  // Confetti on first show
+  if (!detectCooldown) {
+    detectCooldown = true;
+    spawnConfetti();
+    setTimeout(() => { detectCooldown = false; }, 1500);
+  }
+}
+
+function hideLetter() {
+  const stage = document.getElementById('letter-stage');
+  const bigLetter = document.getElementById('big-letter');
+  bigLetter.classList.remove('visible');
+  stage.classList.remove('show-letter');
+}
+
+// ═══════════════════════════════════════════════════════
+//  TOUCH DOTS VISUAL
+// ═══════════════════════════════════════════════════════
+
+function showTouchDots(touches) {
+  const container = document.getElementById('touch-dots');
+  container.innerHTML = '';
+  touches.forEach(t => {
+    const dot = document.createElement('div');
+    dot.className = 'touch-dot';
+    dot.style.left = t.x + 'px';
+    dot.style.top = t.y + 'px';
+    container.appendChild(dot);
+  });
+}
+function clearTouchDots() {
+  document.getElementById('touch-dots').innerHTML = '';
+}
+
+// ═══════════════════════════════════════════════════════
+//  CONFETTI
+// ═══════════════════════════════════════════════════════
+const CONFETTI_COLORS = ['#c8845a','#f5c842','#7aab7a','#7ab8d4','#e8826a','#e8b48a'];
+function spawnConfetti() {
+  const container = document.getElementById('confetti');
+  container.innerHTML = '';
+  for (let i = 0; i < 28; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + 'vw';
+    piece.style.top = '-10px';
+    piece.style.background = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
+    piece.style.width = (8 + Math.random() * 8) + 'px';
+    piece.style.height = piece.style.width;
+    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    piece.style.animationDuration = (0.8 + Math.random() * 1.2) + 's';
+    piece.style.animationDelay = Math.random() * 0.4 + 's';
+    container.appendChild(piece);
+  }
+  setTimeout(() => { container.innerHTML = ''; }, 2500);
+}
+
+// ═══════════════════════════════════════════════════════
+//  UI UTILITIES
+// ═══════════════════════════════════════════════════════
+function openOverlay(id) { document.getElementById(id).classList.add('visible'); }
+function closeOverlay(id) { document.getElementById(id).classList.remove('visible'); }
+
+let announceTimeout;
+function showAnnounce(text) {
+  const el = document.getElementById('announce');
+  el.textContent = text;
+  el.classList.add('show');
+  clearTimeout(announceTimeout);
+  announceTimeout = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+function toggleDebug() {
+  debugMode = !debugMode;
+  document.getElementById('detect-debug').classList.toggle('visible', debugMode);
+  document.getElementById('btn-debug').textContent = debugMode ? '🔎' : '🔍';
+}
+</script>
+
+</body>
+</html>
